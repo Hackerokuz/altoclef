@@ -73,8 +73,9 @@ public class CraftGenericManuallyTask extends Task {
         // We need 9 sticks
         // plank recipe results in 4 sticks
         // this means 3 planks per slot
-        int requiredPerSlot = (int) Math.ceil((double) _target.getTargetCount() / _target.getRecipe().outputCount());
-
+    	// BUT if we already have 7 sticks then we only need 1 plank per slot
+        int requiredPerSlot = (int)Math.ceil((double) (_target.getTargetCount() - mod.getItemStorage().getItemCount(_target.getOutputItem())) / _target.getRecipe().outputCount());
+        if (requiredPerSlot > 64) requiredPerSlot = 64;
         // For each slot in table
         for (int craftSlot = 0; craftSlot < _target.getRecipe().getSlotCount(); ++craftSlot) {
             ItemTarget toFill = _target.getRecipe().getSlot(craftSlot);
