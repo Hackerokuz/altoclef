@@ -1,6 +1,7 @@
 package adris.altoclef.tasks;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.tasks.slot.EnsureFreeInventorySlotTask;
 import adris.altoclef.tasks.slot.MoveItemToSlotFromInventoryTask;
 import adris.altoclef.tasks.slot.ReceiveCraftingOutputSlotTask;
 import adris.altoclef.tasksystem.Task;
@@ -46,7 +47,7 @@ public class CraftGenericManuallyTask extends Task {
             ItemStack cursorStack = StorageHelper.getItemStackInCursorSlot();
             if (!cursorStack.isEmpty()) {
                 Optional<Slot> moveTo = mod.getItemStorage().getSlotThatCanFitInPlayerInventory(cursorStack, false);
-                if (moveTo.isPresent()) {
+                if (moveTo.isPresent() || !ItemHelper.canThrowAwayStack(mod, cursorStack)) {
                     mod.getSlotHandler().clickSlot(moveTo.get(), 0, SlotActionType.PICKUP);
                     return null;
                 }
