@@ -260,7 +260,14 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
     @Override
     protected Task containerSubTask(AltoClef mod) {
         // Refresh crafting table Juuust in case
-        _craftResetTimer.setInterval(mod.getModSettings().getContainerItemMoveDelay() * 10 + CRAFT_RESET_TIMER_BONUS_SECONDS);
+        float CRAFT_RESET_TIMER_SECONDS = 0;
+        for (RecipeTarget recipeTarget : _targets) {
+	        for(ItemTarget recipeItemTarget: recipeTarget.getRecipe().getSlots()) {
+	            if(recipeItemTarget.getCatalogueName() != "null")
+	            	CRAFT_RESET_TIMER_SECONDS += recipeItemTarget.getTargetCount() * recipeTarget.getTargetCount() * (mod.getModSettings().getContainerItemMoveDelay() * 10);
+	        }
+        }
+        _craftResetTimer.setInterval(CRAFT_RESET_TIMER_SECONDS + mod.getModSettings().getContainerItemMoveDelay() * 10 + CRAFT_RESET_TIMER_BONUS_SECONDS);
         if (_craftResetTimer.elapsed()) {
             Debug.logMessage("Refreshing crafting table.");
             return new TimeoutWanderTask(5);
