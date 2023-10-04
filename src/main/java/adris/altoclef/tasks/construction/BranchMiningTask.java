@@ -9,6 +9,7 @@ import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import adris.altoclef.util.slots.Slot;
+import net.minecraft.block.Block;
 import net.minecraft.block.FluidBlock;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
@@ -51,10 +52,13 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 			.getItemTask(new ItemTarget(Items.IRON_PICKAXE, 3));
 	private int _groundHeight = Integer.MIN_VALUE;
 	private GetToYTask _getToYTask = null;
+	private DestroyBlockTask _destroyOre = null;
+	private final Block[] _blocksToMine;
     
-    public BranchMiningTask(BlockPos homePos, Direction startingDirection) {
+    public BranchMiningTask(BlockPos homePos, Direction startingDirection, Block[] blocksToMine) {
 		_startPos = homePos;
 		_startingDirection = startingDirection;
+		_blocksToMine = blocksToMine;
     }
 
 	@Override
@@ -68,6 +72,10 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 		if (mod.getClientBaritone().getPathingBehavior().isPathing()) {
         	_progressChecker.reset();
         }
+		if(_destroyOre != null && _destroyOre.isActive())
+		{
+			return _destroyOre;
+		}
 		if(_prepareForMiningTask.isActive() && !_prepareForMiningTask.isFinished(mod)
 			|| isNewPickaxeRequired(mod))
 		{
@@ -123,6 +131,12 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 				tunnel = new TunnelToMine(mod, prevCheckpoint, 2, 1, 3, _startingDirection);
 				if(wasCleared(mod, tunnel))
 				{
+					BlockPos blockToMine = getOreNextToTunnel(mod, tunnel);
+					if(blockToMine != null)
+					{
+						_destroyOre = new DestroyBlockTask(blockToMine);
+						return _destroyOre;
+					}
 					switch (_startingDirection) {
 				        case EAST:
 				        case WEST:
@@ -305,6 +319,55 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
         }
 		
 		return true;
+	}
+
+	private BlockPos getOreNextToTunnel(AltoClef mod,TunnelToMine tunnel) { 
+		int x1 = tunnel.corner1.getX();
+	    int y1 = tunnel.corner1.getY();
+	    int z1 = tunnel.corner1.getZ();
+	
+	    int x2 = tunnel.corner2.getX();
+	    int y2 = tunnel.corner2.getY();
+	    int z2 = tunnel.corner2.getZ();
+	
+	    // Swap coordinates if necessary to make sure x1 <= x2, y1 <= y2, and z1 <= z2
+	    if (x1 > x2) {
+	        int temp = x1;
+	        x1 = x2;
+	        x2 = temp;
+	    }
+	    if (y1 > y2) {
+	        int temp = y1;
+	        y1 = y2;
+	        y2 = temp;
+	    }
+	    if (z1 > z2) {
+	        int temp = z1;
+	        z1 = z2;
+	        z2 = temp;
+	    }
+	
+	    // Check each block between pos1 and pos2 for air
+	    for (int x = x1; x <= x2; x++) {
+	        for (int y = y1; y <= y2; y++) {
+	            for (int z = z1; z <= z2; z++) {
+//                	BlockState state = MinecraftClient.getInstance().world.getBlockState(new BlockPos(x, y, z));
+	            	BlockPos currentBlock = new BlockPos(x, y, z);
+    				for (Direction dir : Direction.values()) {
+						BlockPos blockToCheck = currentBlock.offset(dir);
+						for (Block block : _blocksToMine) {
+							if(mod.getWorld().getBlockState(blockToCheck).getBlock().equals(block))
+							{
+								return blockToCheck;
+							}
+						}
+						
+					}
+                }
+            }
+        }
+		
+		return null;
 	}
 
 	@Override
