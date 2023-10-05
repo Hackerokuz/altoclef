@@ -113,7 +113,6 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 				BlockPos blockPos = _blocksToMine.get(0);
 				if(!WorldHelper.isAir(mod, blockPos))
 				{
-					System.out.println(Math.sqrt(mod.getPlayer().getBlockPos().getSquaredDistance(blockPos)));
 					if(Math.sqrt(mod.getPlayer().getBlockPos().getSquaredDistance(blockPos)) > 5)
 					{
 						setDebugState("Getting closer to ore found!");
