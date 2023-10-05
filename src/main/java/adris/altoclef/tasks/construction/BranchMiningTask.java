@@ -1,6 +1,7 @@
 package adris.altoclef.tasks.construction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -77,12 +78,16 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 	private Block _currentTarget;
     
     public BranchMiningTask(BlockPos homePos, Direction startingDirection, List<Block> blocksToMine) {
+		if(!Arrays.asList(ItemHelper.ORES).containsAll(blocksToMine))
+			throw new IllegalStateException("Unexpected value: " + blocksToMine.toString() + ", expacted: " + ItemHelper.ORES.toString());
 		_startPos = homePos;
 		_startingDirection = startingDirection;
 		_blockTargets = blocksToMine;
     }
 
 	public BranchMiningTask(BlockPos homePos, Direction startingDirection, Block blockToMine) {
+		if(!Arrays.asList(ItemHelper.ORES).contains(blockToMine))
+			throw new IllegalStateException("Unexpected value: " + blockToMine + ", expacted: " + ItemHelper.ORES.toString());
 		_startPos = homePos;
 		_startingDirection = startingDirection;
 		List<Block> blockList = new ArrayList<>();
