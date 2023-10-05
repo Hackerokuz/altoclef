@@ -22,6 +22,7 @@ import java.util.*;
  * Helper functions and definitions for useful groupings of items
  */
 public class ItemHelper {
+	public static final Block[] ORES = new Block[]{Blocks.COAL_ORE, Blocks.DEEPSLATE_COAL_ORE, Blocks.COPPER_ORE, Blocks.DEEPSLATE_COPPER_ORE, Blocks.IRON_ORE, Blocks.DEEPSLATE_IRON_ORE, Blocks.LAPIS_ORE, Blocks.DEEPSLATE_LAPIS_ORE, Blocks.GOLD_ORE, Blocks.DEEPSLATE_GOLD_ORE, Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE, Blocks.REDSTONE_ORE, Blocks.DEEPSLATE_REDSTONE_ORE, };
     public static final Item[] SAPLINGS = new Item[]{Items.OAK_SAPLING, Items.SPRUCE_SAPLING, Items.BIRCH_SAPLING,
             Items.JUNGLE_SAPLING, Items.ACACIA_SAPLING, Items.DARK_OAK_SAPLING, Items.MANGROVE_PROPAGULE,
             Items.CHERRY_SAPLING};
@@ -126,6 +127,24 @@ public class ItemHelper {
             Blocks.SPRUCE_HANGING_SIGN, Blocks.SPRUCE_WALL_HANGING_SIGN, Blocks.MANGROVE_HANGING_SIGN,
             Blocks.MANGROVE_WALL_HANGING_SIGN, Blocks.BAMBOO_HANGING_SIGN, Blocks.BAMBOO_WALL_HANGING_SIGN,
             Blocks.CHERRY_HANGING_SIGN, Blocks.CHERRY_WALL_HANGING_SIGN};
+    private static final Map<Item, Item> _oreToDrop = new HashMap<>() {
+    	{
+    		put(Items.COAL_ORE, Items.COAL);
+    		put(Items.DEEPSLATE_COAL_ORE, Items.COAL);
+    		put(Items.COPPER_ORE, Items.COPPER_INGOT);
+    		put(Items.DEEPSLATE_COPPER_ORE, Items.COPPER_INGOT);
+    		put(Items.IRON_ORE, Items.IRON_INGOT);
+    		put(Items.DEEPSLATE_IRON_ORE, Items.IRON_INGOT);
+    		put(Items.LAPIS_ORE, Items.LAPIS_LAZULI);
+    		put(Items.DEEPSLATE_LAPIS_ORE, Items.LAPIS_LAZULI);
+    		put(Items.GOLD_ORE, Items.GOLD_INGOT);
+    		put(Items.DEEPSLATE_GOLD_ORE, Items.GOLD_INGOT);
+    		put(Items.DIAMOND_ORE, Items.DIAMOND);
+    		put(Items.DEEPSLATE_DIAMOND_ORE, Items.DIAMOND);
+    		put(Items.REDSTONE_ORE, Items.REDSTONE);
+    		put(Items.DEEPSLATE_REDSTONE_ORE, Items.REDSTONE);
+    	}
+    };
     private static final Map<Item, Item> _logToPlanks = new HashMap<>() {
         {
             put(Items.CHERRY_LOG, Items.CHERRY_PLANKS);
@@ -317,6 +336,10 @@ public class ItemHelper {
             }
         }
         return result.toArray(Block[]::new);
+    }
+    
+    public static Item oreToDrop(Item ore) {
+    	return _oreToDrop.getOrDefault(ore, null);
     }
 
     public static Item logToPlanks(Item logItem) {
@@ -525,4 +548,63 @@ public class ItemHelper {
         }
     }
 
+    public class OreDistribution {
+    	
+    	public final int maxHeight;
+    	public final int optimalHeight;
+    	public final int minHeight;
+    	
+    	public OreDistribution(Block block)
+    	{
+
+        	if(block == Blocks.COAL_ORE || block == Blocks.DEEPSLATE_COAL_ORE)
+        	{
+        		maxHeight = 192;
+        		optimalHeight = 96;
+        		minHeight = 0;
+        	}else
+        	if(block == Blocks.COPPER_ORE || block == Blocks.DEEPSLATE_COPPER_ORE)
+        	{
+        		maxHeight = 112;
+        		optimalHeight = 48;
+        		minHeight = -16;
+        	}else
+        	if(block == Blocks.IRON_ORE || block == Blocks.DEEPSLATE_IRON_ORE)
+        	{
+        		maxHeight = 72;
+        		optimalHeight = 16;
+        		minHeight = -32;
+        	}else
+        	if(block == Blocks.LAPIS_ORE || block == Blocks.DEEPSLATE_LAPIS_ORE)
+        	{
+        		maxHeight = 64;
+        		optimalHeight = 0;
+        		minHeight = -59;
+        	}else
+        	if(block == Blocks.GOLD_ORE || block == Blocks.DEEPSLATE_GOLD_ORE)
+        	{
+        		maxHeight = 32;
+        		optimalHeight = -16;
+        		minHeight = -59;
+        	}else
+        	if(block == Blocks.DIAMOND_ORE || block == Blocks.DEEPSLATE_DIAMOND_ORE)
+        	{
+        		maxHeight = 15;
+        		optimalHeight = -59;
+        		minHeight = -59;
+        	}else
+            if(block == Blocks.REDSTONE_ORE || block == Blocks.DEEPSLATE_REDSTONE_ORE)
+            {
+        		maxHeight = 15;
+        		optimalHeight = -59;
+        		minHeight = -59;
+    		}else
+    		{
+    	    	maxHeight = 8;
+    			optimalHeight = 8;
+    			minHeight = 8;
+    		}
+//        	throw new IllegalArgumentException("Unexpected value: " + block);
+    	}
+    }
 }

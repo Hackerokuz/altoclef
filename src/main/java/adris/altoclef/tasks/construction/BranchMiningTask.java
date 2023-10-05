@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
@@ -13,9 +14,11 @@ import adris.altoclef.TaskCatalogue;
 import adris.altoclef.tasks.movement.GetCloseToBlockTask;
 import adris.altoclef.tasks.movement.GetToBlockTask;
 import adris.altoclef.tasks.movement.GetToYTask;
+import adris.altoclef.tasks.slot.EnsureFreeInventorySlotTask;
 import adris.altoclef.tasksystem.ITaskRequiresGrounded;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
+import adris.altoclef.util.helpers.ItemHelper;
 import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import adris.altoclef.util.slots.Slot;
@@ -30,6 +33,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.entity.ItemEntity;
 
 /*
  * Mining in a following structure:
@@ -70,6 +74,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 	private GetToBlockTask _getCloseToBlockTask = null;
 	private final List<Block> _blockTargets;
 	private List<BlockPos> _blocksToMine;
+	private Block _currentTarget;
     
     public BranchMiningTask(BlockPos homePos, Direction startingDirection, List<Block> blocksToMine) {
 		_startPos = homePos;
@@ -100,12 +105,31 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 		{
 			return null;
 		}
-		if(_destroyOreTask != null && _destroyOreTask.isActive() && !_destroyOreTask.isFinished(mod))
+		if(_currentTarget != null)
 		{
-			return _destroyOreTask;
-		} else if (_getCloseToBlockTask != null && _getCloseToBlockTask.isActive() && !_getCloseToBlockTask.isFinished(mod))
+			Optional<ItemEntity> itemEntity = mod.getEntityTracker().getClosestItemDrop(ItemHelper.oreToDrop(_currentTarget.asItem()));
+			if(itemEntity.isPresent()) {
+				setDebugState("Picking up the drop!");
+				// Ensure our inventory is free if we're close
+		        boolean touching = mod.getEntityTracker().isCollidingWithPlayer(itemEntity.get());
+		        if (touching) {
+	                if (mod.getItemStorage().getSlotsThatCanFitInPlayerInventory(itemEntity.get().getStack(), false).isEmpty()) {
+	                    return new EnsureFreeInventorySlotTask();
+	                }
+		        } else {
+					setDebugState("Getting closer to the drop!");
+		        	_getCloseToBlockTask = new GetToBlockTask(itemEntity.get().getBlockPos());
+		        }
+			}
+		}
+		
+		if (_getCloseToBlockTask != null && _destroyOreTask != null && !_destroyOreTask.isActive() && !_getCloseToBlockTask.isFinished(mod))
 		{
 			return _getCloseToBlockTask;
+		} else if(_destroyOreTask != null && _destroyOreTask.isActive() && !_destroyOreTask.isFinished(mod))
+		{
+			setDebugState("Mining ores found!");
+			return _destroyOreTask;
 		}
 		else if(_blocksToMine != null && !_blocksToMine.isEmpty())
 		{
@@ -113,16 +137,16 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 				BlockPos blockPos = _blocksToMine.get(0);
 				if(!WorldHelper.isAir(mod, blockPos))
 				{
+					_currentTarget = mod.getWorld().getBlockState(blockPos).getBlock();
 					if(Math.sqrt(mod.getPlayer().getBlockPos().getSquaredDistance(blockPos)) > 5)
 					{
 						setDebugState("Getting closer to ore found!");
 						_getCloseToBlockTask = new GetToBlockTask(blockPos);
 						return _getCloseToBlockTask;
-
 					}
-					setDebugState("Mining ores found!");
 					_destroyOreTask = new DestroyBlockTask(blockPos);
 					_blocksToMine.remove(blockPos);
+					setDebugState("Mining ores found!");
 					return _destroyOreTask;
 				}
 				_blocksToMine.remove(blockPos);
@@ -157,6 +181,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 		}
 		if (!mod.getClientBaritone().getBuilderProcess().isActive()) {
 			TunnelToMine tunnel = null;
+			_getCloseToBlockTask = null;
 			
 
 			if(_prevTunnel != null && wasCleared(mod, _prevTunnel))
