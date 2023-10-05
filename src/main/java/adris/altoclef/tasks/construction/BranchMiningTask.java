@@ -79,7 +79,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
     
     public BranchMiningTask(BlockPos homePos, Direction startingDirection, List<Block> blocksToMine) {
 		if(!Arrays.asList(ItemHelper.ORES).containsAll(blocksToMine))
-			throw new IllegalStateException("Unexpected value: " + blocksToMine.toString() + ", expacted: " + ItemHelper.ORES.toString());
+			throw new IllegalStateException("Unexpected value: " + blocksToMine.toString() + ", expacted any of: " + ItemHelper.ORES.toString());
 		_startPos = homePos;
 		_startingDirection = startingDirection;
 		_blockTargets = blocksToMine;
@@ -87,7 +87,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 
 	public BranchMiningTask(BlockPos homePos, Direction startingDirection, Block blockToMine) {
 		if(!Arrays.asList(ItemHelper.ORES).contains(blockToMine))
-			throw new IllegalStateException("Unexpected value: " + blockToMine + ", expacted: " + ItemHelper.ORES.toString());
+			throw new IllegalStateException("Unexpected value: " + blockToMine + ", expacted any of: " + ItemHelper.ORES.toString());
 		_startPos = homePos;
 		_startingDirection = startingDirection;
 		List<Block> blockList = new ArrayList<>();
