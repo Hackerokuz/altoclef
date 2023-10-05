@@ -10,6 +10,8 @@ import java.util.Set;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.TaskCatalogue;
+import adris.altoclef.tasks.movement.GetCloseToBlockTask;
+import adris.altoclef.tasks.movement.GetToBlockTask;
 import adris.altoclef.tasks.movement.GetToYTask;
 import adris.altoclef.tasksystem.ITaskRequiresGrounded;
 import adris.altoclef.tasksystem.Task;
@@ -64,7 +66,8 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 			.getItemTask(new ItemTarget(Items.IRON_PICKAXE, 3));
 	private int _groundHeight = Integer.MIN_VALUE;
 	private GetToYTask _getToYTask = null;
-	private DestroyBlockTask _destroyOre = null;
+	private DestroyBlockTask _destroyOreTask = null;
+	private GetToBlockTask _getCloseToBlockTask = null;
 	private final List<Block> _blockTargets;
 	private List<BlockPos> _blocksToMine;
     
@@ -97,19 +100,31 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 		{
 			return null;
 		}
-		if(_destroyOre != null && _destroyOre.isActive() && !_destroyOre.isFinished(mod))
+		if(_destroyOreTask != null && _destroyOreTask.isActive() && !_destroyOreTask.isFinished(mod))
 		{
-			return _destroyOre;
-		} else if(_blocksToMine != null && !_blocksToMine.isEmpty())
+			return _destroyOreTask;
+		} else if (_getCloseToBlockTask != null && _getCloseToBlockTask.isActive() && !_getCloseToBlockTask.isFinished(mod))
+		{
+			return _getCloseToBlockTask;
+		}
+		else if(_blocksToMine != null && !_blocksToMine.isEmpty())
 		{
 			do {
 				BlockPos blockPos = _blocksToMine.get(0);
 				if(!WorldHelper.isAir(mod, blockPos))
 				{
+					System.out.println(Math.sqrt(mod.getPlayer().getBlockPos().getSquaredDistance(blockPos)));
+					if(Math.sqrt(mod.getPlayer().getBlockPos().getSquaredDistance(blockPos)) > 5)
+					{
+						setDebugState("Getting closer to ore found!");
+						_getCloseToBlockTask = new GetToBlockTask(blockPos);
+						return _getCloseToBlockTask;
+
+					}
 					setDebugState("Mining ores found!");
-					_destroyOre = new DestroyBlockTask(blockPos);
+					_destroyOreTask = new DestroyBlockTask(blockPos);
 					_blocksToMine.remove(blockPos);
-					return _destroyOre;
+					return _destroyOreTask;
 				}
 				_blocksToMine.remove(blockPos);
 			} while (!_blocksToMine.isEmpty());
