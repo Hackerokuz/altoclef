@@ -3,7 +3,10 @@ package adris.altoclef.commands;
 import adris.altoclef.AltoClef;
 import adris.altoclef.commandsystem.ArgParser;
 import adris.altoclef.commandsystem.Command;
+import adris.altoclef.commandsystem.ItemList;
 import adris.altoclef.tasks.construction.BranchMiningTask;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 
 public class BranchMineCommand extends Command {
 
@@ -13,7 +16,12 @@ public class BranchMineCommand extends Command {
 	
 	@Override
     protected void call(AltoClef mod, ArgParser parser) {
-		mod.runUserTask(new BranchMiningTask(mod.getPlayer().getBlockPos(), mod.getPlayer().getMovementDirection()), this::finish);
+
+		mod.runUserTask(new BranchMiningTask(
+				mod.getPlayer().getBlockPos(), 
+				mod.getPlayer().getMovementDirection(),
+				Blocks.REDSTONE_ORE
+				), this::finish);
     }
 
 }
