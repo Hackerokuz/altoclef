@@ -102,16 +102,17 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 			return _destroyOre;
 		} else if(_blocksToMine != null && !_blocksToMine.isEmpty())
 		{
-			// System.out.println(_blocksToMine);
-			for (BlockPos blockPos : _blocksToMine) {
-				setDebugState("Breaking at " + blockPos.toShortString());
+			do {
+				BlockPos blockPos = _blocksToMine.get(0);
 				if(!WorldHelper.isAir(mod, blockPos))
 				{
+					setDebugState("Mining ores found!");
 					_destroyOre = new DestroyBlockTask(blockPos);
 					_blocksToMine.remove(blockPos);
 					return _destroyOre;
 				}
-			}
+				_blocksToMine.remove(blockPos);
+			} while (!_blocksToMine.isEmpty());
 		}
 		if(_prepareForMiningTask.isActive() && !_prepareForMiningTask.isFinished(mod)
 			|| isNewPickaxeRequired(mod))
@@ -147,17 +148,6 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 			if(_prevTunnel != null && wasCleared(mod, _prevTunnel))
 			{
 				_blocksToMine = getBlocksNextToTunnel(mod, _prevTunnel);
-				if(_blocksToMine != null && !_blocksToMine.isEmpty())
-				{
-					for (BlockPos blockPos : _blocksToMine) {
-						if(!WorldHelper.isAir(mod, blockPos))
-						{
-							_destroyOre = new DestroyBlockTask(blockPos);
-							_blocksToMine.remove(blockPos);
-							return _destroyOre;
-						}
-					}
-				}
 			}
 			
 			if(_checkpointPos != null)
@@ -167,7 +157,6 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 				tunnel = new TunnelToMine(mod, prevCheckpoint, 2, 1, 3, _startingDirection);
 				if(_prevTunnel != null && wasCleared(mod, _prevTunnel) && wasCleared(mod, tunnel))
 				{
-					if (_prevTunnel != null) setDebugState("Mining " + _prevTunnel.tunnelDirection.getOpposite() + " branch!");
 					switch (_startingDirection) {
 				        case EAST:
 				        case WEST:
@@ -190,6 +179,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 				        default:
 				            throw new IllegalStateException("Unexpected value: " + _startingDirection);
 					}
+					if (_prevTunnel != null) setDebugState("Mining " + tunnel.tunnelDirection + " branch!");
 					
 					if(wasCleared(mod, tunnel))
 					{
@@ -338,8 +328,7 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 		return true;
 	}
 
-	private List<BlockPos> getBlocksNextToTunnel(AltoClef mod,TunnelToMine tunnel) { 
-		System.out.println("Searching for blocks next to tunnel");
+	private List<BlockPos> getBlocksNextToTunnel(AltoClef mod,TunnelToMine tunnel) {
 		int x1 = tunnel.corner1.getX();
 	    int y1 = tunnel.corner1.getY();
 	    int z1 = tunnel.corner1.getZ();
@@ -369,7 +358,6 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
 	    for (int x = x1; x <= x2; x++) {
 	        for (int y = y1; y <= y2; y++) {
 	            for (int z = z1; z <= z2; z++) {
-//                	BlockState state = MinecraftClient.getInstance().world.getBlockState(new BlockPos(x, y, z));
 	            	BlockPos currentBlock = new BlockPos(x, y, z);
     				for (Direction dir : Direction.values()) {
 						BlockPos blockPosToCheck = currentBlock.offset(dir);
