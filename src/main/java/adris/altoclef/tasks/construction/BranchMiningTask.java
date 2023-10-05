@@ -362,7 +362,12 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
     				for (Direction dir : Direction.values()) {
 						BlockPos blockPosToCheck = currentBlock.offset(dir);
 						Block blockToCheck = mod.getWorld().getBlockState(blockPosToCheck).getBlock();
-						if(_blockTargets.contains(blockToCheck) && !vain.contains(blockPosToCheck))
+						if(
+								_blockTargets.contains(blockToCheck) 
+								&& !vain.contains(blockPosToCheck)
+								&& !mod.getBlockTracker().unreachable(blockPosToCheck)
+								&& WorldHelper.canBreak(mod, blockPosToCheck)
+						)
 						{
 							vain.add(blockPosToCheck);
 							vain.addAll(findAdjacentBlocksOfSameType(mod, blockPosToCheck, blockToCheck, vain));
@@ -398,7 +403,10 @@ public class BranchMiningTask extends Task implements ITaskRequiresGrounded {
                 }
 
                 BlockState neighborBlockState = mod.getWorld().getBlockState(neighborPos);
-                if (neighborBlockState.getBlock() == targetBlockState.getBlock()) {
+                if (neighborBlockState.getBlock() == targetBlockState.getBlock()
+						&& !mod.getBlockTracker().unreachable(neighborPos)
+						&& WorldHelper.canBreak(mod, neighborPos)
+                		) {
                     queue.add(neighborPos);
                     visited.add(neighborPos);
                 }
