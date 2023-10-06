@@ -49,7 +49,7 @@ public class MobDefenseChain extends SingleTaskChain {
     private final KillAura _killAura = new KillAura();
     private final HashMap<Entity, TimerGame> _closeAnnoyingEntities = new HashMap<>();
     private Entity _targetEntity;
-    private boolean _shielding = false;
+    private static boolean _shielding = false;
     private boolean _doingFunkyStuff = false;
     private boolean _wasPuttingOutFire = false;
     private CustomBaritoneGoalTask _runAwayTask;
@@ -75,7 +75,7 @@ public class MobDefenseChain extends SingleTaskChain {
         return _cachedLastPriority;
     }
 
-    private void startShielding(AltoClef mod) {
+    private static void startShielding(AltoClef mod) {
         _shielding = true;
         mod.getInputControls().hold(Input.SNEAK);
         mod.getInputControls().hold(Input.CLICK_RIGHT);
@@ -171,28 +171,30 @@ public class MobDefenseChain extends SingleTaskChain {
 
         // Run away if a weird mob is close by.
         Optional<Entity> universallyDangerous = getUniversallyDangerousMob(mod);
-        if (universallyDangerous.isPresent()) {
+        if (universallyDangerous.isPresent() && mod.getPlayer().getHealth() <= 10) {
             _runAwayTask = new RunAwayFromHostilesTask(DANGER_KEEP_DISTANCE, true);
             setTask(_runAwayTask);
             return 70;
         }
 
         _doingFunkyStuff = false;
+        PlayerSlot offhandSlot = PlayerSlot.OFFHAND_SLOT;
+        Item offhandItem = StorageHelper.getItemStackInSlot(offhandSlot).getItem();
         // Run away from creepers
         CreeperEntity blowingUp = getClosestFusingCreeper(mod);
         if (blowingUp != null) {
             if (!mod.getFoodChain().needsToEat() && (mod.getItemStorage().hasItem(Items.SHIELD) ||
                     mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
-                    !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null) {
+                    !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null
+                    && !mod.getPlayer().getItemCooldownManager().isCoolingDown(offhandItem)
+                    && mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
                 _doingFunkyStuff = true;
                 LookHelper.lookAt(mod, blowingUp.getEyePos());
                 ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
                 if (shieldSlot.getItem() != Items.SHIELD) {
                     mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
                 } else {
-                    if (mod.getClientBaritone().getPathingBehavior().isSafeToCancel()){
-                        startShielding(mod);
-                    }
+                    startShielding(mod);
                 }
             } else {
                 _doingFunkyStuff = true;
@@ -207,19 +209,16 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
         // Block projectiles with shield
-        PlayerSlot offhandSlot = PlayerSlot.OFFHAND_SLOT;
-        Item offhandItem = StorageHelper.getItemStackInSlot(offhandSlot).getItem();
         if (!mod.getFoodChain().needsToEat() && mod.getModSettings().isDodgeProjectiles() && isProjectileClose(mod) &&
                 (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD)) &&
-                !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null &&
-                !mod.getPlayer().getItemCooldownManager().isCoolingDown(offhandItem)) {
+                !mod.getEntityTracker().entityFound(PotionEntity.class) && _runAwayTask == null
+                && !mod.getPlayer().getItemCooldownManager().isCoolingDown(offhandItem)
+                && mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
             ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
             if (shieldSlot.getItem() != Items.SHIELD) {
                 mod.getSlotHandler().forceEquipItemToOffhand(Items.SHIELD);
             } else {
-                if (mod.getClientBaritone().getPathingBehavior().isSafeToCancel()){
-                    startShielding(mod);
-                }
+                startShielding(mod);
             }
         } else {
             if (blowingUp == null) {
@@ -285,8 +284,9 @@ public class MobDefenseChain extends SingleTaskChain {
                                 boolean hoglinAttacking = hostile instanceof HoglinEntity;
                                 boolean zoglinAttacking = hostile instanceof ZoglinEntity;
                                 boolean piglinBruteAttacking = hostile instanceof PiglinBruteEntity;
+                                boolean vindicatorAttacking = hostile instanceof VindicatorEntity;
                                 if (blazeAttacking || witherSkeletonAttacking || hoglinAttacking || zoglinAttacking ||
-                                        piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking) {
+                                        piglinBruteAttacking || endermanAttacking || witherAttacking || wardenAttacking || vindicatorAttacking) {
                                     if (mod.getPlayer().getHealth() <= 10) {
                                         _closeAnnoyingEntities.put(hostile, new TimerGame(0));
                                     } else {
@@ -414,7 +414,7 @@ public class MobDefenseChain extends SingleTaskChain {
 
     private void putOutFire(AltoClef mod, BlockPos pos) {
         Optional<Rotation> reach = LookHelper.getReach(pos);
-        if (reach.isPresent()){
+        if (reach.isPresent()) {
             Baritone b = mod.getClientBaritone();
             if (LookHelper.isLookingAt(mod, pos)) {
                 b.getPathingBehavior().requestPause();
@@ -504,8 +504,9 @@ public class MobDefenseChain extends SingleTaskChain {
                         if (isGhastBall) {
                             Optional<Entity> ghastBall = mod.getEntityTracker().getClosestEntity(FireballEntity.class);
                             Optional<Entity> ghast = mod.getEntityTracker().getClosestEntity(GhastEntity.class);
-                            if (ghastBall.isPresent() && ghast.isPresent() && _runAwayTask == null) {
-                                mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
+                            if (ghastBall.isPresent() && ghast.isPresent() && _runAwayTask == null
+                                    && mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
+                                mod.getClientBaritone().getPathingBehavior().requestPause();
                                 LookHelper.lookAt(mod, ghast.get().getEyePos());
                             }
                             return false;
@@ -525,8 +526,8 @@ public class MobDefenseChain extends SingleTaskChain {
                         double horizontalDistanceSq = delta.x * delta.x + delta.z * delta.z;
                         double verticalDistance = Math.abs(delta.y);
                         if (horizontalDistanceSq < ARROW_KEEP_DISTANCE_HORIZONTAL * ARROW_KEEP_DISTANCE_HORIZONTAL && verticalDistance < ARROW_KEEP_DISTANCE_VERTICAL) {
-                            if (_runAwayTask == null) {
-                                mod.getClientBaritone().getPathingBehavior().softCancelIfSafe();
+                            if (_runAwayTask == null && mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
+                                mod.getClientBaritone().getPathingBehavior().requestPause();
                                 LookHelper.lookAt(mod, projectile.position);
                             }
                             return true;
@@ -584,6 +585,13 @@ public class MobDefenseChain extends SingleTaskChain {
             double range = SAFE_KEEP_DISTANCE - 2;
             if (piglinBrute.get().squaredDistanceTo(mod.getPlayer()) < range * range && EntityHelper.isAngryAtPlayer(mod, piglinBrute.get())) {
                 return piglinBrute;
+            }
+        }
+        Optional<Entity> vindicator = mod.getEntityTracker().getClosestEntity(VindicatorEntity.class);
+        if (vindicator.isPresent()) {
+            double range = SAFE_KEEP_DISTANCE - 2;
+            if (vindicator.get().squaredDistanceTo(mod.getPlayer()) < range * range && EntityHelper.isAngryAtPlayer(mod, vindicator.get())) {
+                return vindicator;
             }
         }
         return Optional.empty();
