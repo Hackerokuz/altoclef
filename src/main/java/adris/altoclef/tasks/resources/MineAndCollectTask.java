@@ -352,7 +352,8 @@ public class MineAndCollectTask extends ResourceTask {
                 _desperateSettingsTimer.reset();
             }
             
-            if(!_desperateSettingsTimer.elapsed())
+            if(mod.getClientBaritoneSettings().legitMine.value
+					&& !_desperateSettingsTimer.elapsed())
             {
                 mod.getBehaviour().setBlockBreakAdditionalPenalty(0.0);
 	            mod.getClientBaritoneSettings().blockBreakAdditionalPenalty.value = 0.0;
