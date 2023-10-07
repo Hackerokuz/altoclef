@@ -363,9 +363,9 @@ public class MineAndCollectTask extends ResourceTask {
             }
             
             if(
-            		_getPicksTask.isActive() && !_getPicksTask.isFinished(mod)
+            		mod.getClientBaritoneSettings().legitMine.value && (_getPicksTask.isActive() && !_getPicksTask.isFinished(mod)
         		|| _isOre
-    			&& isNewPickaxeRequired(mod)
+    			&& isNewPickaxeRequired(mod))
     		) {
             	if(!(mod.getUserTaskChain().getCurrentTask() instanceof GetPickaxesTask))
             	{
