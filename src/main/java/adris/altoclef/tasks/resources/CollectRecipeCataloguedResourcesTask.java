@@ -8,6 +8,7 @@ import adris.altoclef.util.CraftingRecipe;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.RecipeTarget;
 import adris.altoclef.util.helpers.StorageHelper;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.Item;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -34,6 +35,12 @@ public class CollectRecipeCataloguedResourcesTask extends Task {
     @Override
     protected Task onTick(AltoClef mod) {
         // TODO: Cache this once instead of doing it every frame.
+    	
+    	if(MinecraftClient.getInstance().getCurrentFps() <= 3)
+    	{
+    		Debug.logWarning("Saving performance!!\n\n[WARNING] This is a DUCT TAPE!!\n[WARNING] Batter solution should be found!!\n\n");
+    		return null;
+    	}
 
         // Stuff to get, both catalogued + individual items.
         HashMap<String, Integer> catalogueCount = new HashMap<>();
