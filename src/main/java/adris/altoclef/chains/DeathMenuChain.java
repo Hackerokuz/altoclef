@@ -80,7 +80,14 @@ public class DeathMenuChain extends TaskChain {
                     _deathCount++;
                     Debug.logMessage("RESPAWNING... (this is death #" + _deathCount + ")");
                     assert MinecraftClient.getInstance().player != null;
-                    String deathmessage = ((DeathScreenAccessor) screen).getMessage().getString(); //"(not implemented yet)"; //screen.children().toString();
+                    String deathmessage = ""; //"(not implemented yet)"; //screen.children().toString();
+                    
+                    try {
+                    	deathmessage = ((DeathScreenAccessor) screen).getMessage().getString();
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+                    
                     MinecraftClient.getInstance().player.requestRespawn();
                     MinecraftClient.getInstance().setScreen(null);
                     for (String i : mod.getModSettings().getDeathCommand().split(" & ")) {
