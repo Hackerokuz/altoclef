@@ -336,8 +336,10 @@ public class SmeltInSmokerTask extends ResourceTask {
         @Override
         protected double getCostToMakeNew(AltoClef mod) {
             if (_smokerCache.burnPercentage > 0 || _smokerCache.burningFuelCount > 0 ||
-                    _smokerCache.fuelSlot != null || _smokerCache.materialSlot != null ||
-                    _smokerCache.outputSlot != null) {
+                _smokerCache.fuelSlot != null || _smokerCache.materialSlot != null ||
+                _smokerCache.outputSlot != null ||
+                !_smokerCache.fuelSlot.isEmpty() || !_smokerCache.materialSlot.isEmpty() ||
+                !_smokerCache.outputSlot.isEmpty()) {
                 return 9999999.0;
             }
             if (mod.getItemStorage().getItemCount(Items.COBBLESTONE) > 8 &&

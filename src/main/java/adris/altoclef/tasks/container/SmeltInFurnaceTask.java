@@ -333,8 +333,10 @@ public class SmeltInFurnaceTask extends ResourceTask {
         @Override
         protected double getCostToMakeNew(AltoClef mod) {
             if (_furnaceCache.burnPercentage > 0 || _furnaceCache.burningFuelCount > 0 ||
-                    _furnaceCache.fuelSlot != null || _furnaceCache.materialSlot != null ||
-                    _furnaceCache.outputSlot != null) {
+                _furnaceCache.fuelSlot != null || _furnaceCache.materialSlot != null ||
+                _furnaceCache.outputSlot != null||
+                !_furnaceCache.fuelSlot.isEmpty() || !_furnaceCache.materialSlot.isEmpty() ||
+                !_furnaceCache.outputSlot.isEmpty()) {
                 return 9999999.0;
             }
             if (mod.getItemStorage().getItemCount(Items.COBBLESTONE) > 8) {

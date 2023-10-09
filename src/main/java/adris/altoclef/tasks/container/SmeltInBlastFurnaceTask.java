@@ -334,8 +334,10 @@ public class SmeltInBlastFurnaceTask extends ResourceTask {
         @Override
         protected double getCostToMakeNew(AltoClef mod) {
             if (_blastFurnaceCache.burnPercentage > 0 || _blastFurnaceCache.burningFuelCount > 0 ||
-                    _blastFurnaceCache.fuelSlot != null || _blastFurnaceCache.materialSlot != null ||
-                    _blastFurnaceCache.outputSlot != null) {
+                _blastFurnaceCache.fuelSlot != null || _blastFurnaceCache.materialSlot != null ||
+                _blastFurnaceCache.outputSlot != null ||
+                !_blastFurnaceCache.fuelSlot.isEmpty() || !_blastFurnaceCache.materialSlot.isEmpty() ||
+                !_blastFurnaceCache.outputSlot.isEmpty()) {
                 return 9999999.0;
             }
             if (mod.getItemStorage().getItemCount(Items.COBBLESTONE) > 11 &&
