@@ -2,13 +2,17 @@ package adris.altoclef.chains;
 
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
+import adris.altoclef.TaskCatalogue;
 import adris.altoclef.control.KillAura;
+import adris.altoclef.tasks.ResourceTask;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.CustomBaritoneGoalTask;
 import adris.altoclef.tasks.movement.DodgeProjectilesTask;
 import adris.altoclef.tasks.movement.RunAwayFromCreepersTask;
 import adris.altoclef.tasks.movement.RunAwayFromHostilesTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
+import adris.altoclef.tasks.squashed.CataloguedResourceTask;
+import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.baritone.CachedProjectile;
 import adris.altoclef.util.helpers.*;
@@ -165,10 +169,6 @@ public class MobDefenseChain extends SingleTaskChain {
         doForceField(mod);
 
 
-        // Tell baritone to avoid mobs if we're vulnurable.
-        // Costly.
-        //mod.getClientBaritoneSettings().avoidance.value = isVulnurable(mod);
-
         // Run away if a weird mob is close by.
         Optional<Entity> universallyDangerous = getUniversallyDangerousMob(mod);
         if (universallyDangerous.isPresent() && mod.getPlayer().getHealth() <= 10) {
@@ -176,6 +176,8 @@ public class MobDefenseChain extends SingleTaskChain {
             setTask(_runAwayTask);
             return 70;
         }
+        
+
 
         _doingFunkyStuff = false;
         PlayerSlot offhandSlot = PlayerSlot.OFFHAND_SLOT;
@@ -244,6 +246,8 @@ public class MobDefenseChain extends SingleTaskChain {
                 return 70;
             }
         }
+        
+
 
         if (mod.getModSettings().shouldDealWithAnnoyingHostiles()) {
             // Deal with hostiles because they are annoying.
@@ -376,9 +380,20 @@ public class MobDefenseChain extends SingleTaskChain {
                     setTask(_runAwayTask);
                     return 80;
                 }
+            } else if(bestSword == null) {
+            	setTask(TaskCatalogue
+            			.getItemTask(Items.STONE_SWORD, 1));
+            	return 60;
             }
         }
-        // By default if we aren't "immediately" in danger but were running away, keep running away until we're good.
+
+        // Tell baritone to avoid mobs if we're vulnurable.
+        // Costly.
+        if (mod.getClientBaritoneSettings().avoidance.value != !(_runAwayTask != null && _runAwayTask.isActive()))
+        {
+        	mod.getClientBaritoneSettings().avoidance.value = !(_runAwayTask != null && _runAwayTask.isActive());
+        }
+    	// By default if we aren't "immediately" in danger but were running away, keep running away until we're good.
         if (_runAwayTask != null && !_runAwayTask.isFinished(mod)) {
             setTask(_runAwayTask);
             return _cachedLastPriority;
