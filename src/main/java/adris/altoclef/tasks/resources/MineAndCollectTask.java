@@ -32,7 +32,9 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -295,16 +297,24 @@ public class MineAndCollectTask extends ResourceTask {
                 		)
                 {
                     return WorldHelper.canBreak(mod, check) 
-    	            		&& isNextToAir(mod, check) && isBlockVisible(check);
+    	            		&& isNextToAir(mod, check) && isBlockVisible(check) && (
+    	            				mod.getModSettings().shouldBlacklistDangerousBlocks() && !isDangerousBlock(mod, check)
+    	            				|| !mod.getModSettings().shouldBlacklistDangerousBlocks()
+    	            				);
                 }
 
               if (_blacklist.contains(check)) return false;
               if (mod.getBlockTracker().unreachable(check)) return false;
-            	return WorldHelper.canBreak(mod, check);
+            	return WorldHelper.canBreak(mod, check) && (
+        				mod.getModSettings().shouldBlacklistDangerousBlocks() && !isDangerousBlock(mod, check)
+        				|| !mod.getModSettings().shouldBlacklistDangerousBlocks()
+        				);
             }, _blocks);
             Optional<ItemEntity> closestDrop = Optional.empty();
             if (mod.getEntityTracker().itemDropped(_targets)) {
-                closestDrop = mod.getEntityTracker().getClosestItemDrop(pos, _targets);
+                closestDrop = mod.getEntityTracker().getClosestItemDrop(pos, dropCheck -> {
+                	return !isDangerousBlock(mod, dropCheck.getBlockPos());
+                }, _targets);
             }
 
             double blockSq = closestBlock.isEmpty() ? Double.POSITIVE_INFINITY : closestBlock.get().getSquaredDistance(pos);
@@ -418,7 +428,6 @@ public class MineAndCollectTask extends ResourceTask {
 					if(groundHeight < oreDis.maxHeight
 							&& mod.getPlayer().getY() > groundHeight)
 					{
-						Debug.logMessage("Going y ");
 						_searchTask = new GetToYTask(oreDis.minHeight);
 					}else
 					if(
@@ -426,7 +435,6 @@ public class MineAndCollectTask extends ResourceTask {
 						&& (mod.getPlayer().getY() < oreDis.minHeight - 20
 						|| mod.getPlayer().getY() > oreDis.maxHeight + 20)
 					) {
-						Debug.logMessage("Going y 2");
 						_searchTask = new GetToYTask(oreDis.optimalHeight);
 					}
 					
@@ -523,6 +531,12 @@ public class MineAndCollectTask extends ResourceTask {
         @Override
         protected void onStop(AltoClef mod, Task interruptTask) {
             _desperateSettingsTimer.forceElapse();
+            if(mod.getClientBaritoneSettings().legitMine.value)
+            {
+                mod.getClientBaritoneSettings().blockBreakAdditionalPenalty.reset();
+                mod.getClientBaritoneSettings().blockPlacementPenalty.reset();
+                mod.getClientBaritoneSettings().costHeuristic.reset();
+            }
         }
 
         @Override
@@ -574,6 +588,22 @@ public class MineAndCollectTask extends ResourceTask {
 //        			|| mod.getWorld().getBlockState(pos.west()).getBlock() == Blocks.CAVE_AIR
 //        			|| mod.getWorld().getBlockState(pos.north()).getBlock() == Blocks.CAVE_AIR
 //        			|| mod.getWorld().getBlockState(pos.south()).getBlock() == Blocks.CAVE_AIR;	
+        }
+        
+        protected static boolean isDangerousBlock(AltoClef mod, BlockPos pos) {
+//        	if(!isOre(mod.getWorld().getBlockState(pos))) return false;
+            Iterable<Entity> entities = mod.getWorld().getEntities();
+            for (Entity entity : entities) {
+                if (entity instanceof HostileEntity) {
+                    if (!mod.getBlockTracker().unreachable(pos)) {
+                        if (mod.getPlayer().squaredDistanceTo(entity.getPos()) < 150 &&
+                        		pos.isWithinDistance(entity.getPos(), 30)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        	return false;
         }
         
         

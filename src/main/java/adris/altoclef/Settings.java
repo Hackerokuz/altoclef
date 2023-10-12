@@ -259,6 +259,13 @@ public class Settings implements IFailableConfigFile {
     private boolean autoRespawn = true;
 
     /**
+     * If true, will automatically avoid all blocks that are close to hostile mobs.
+     * <p>
+     * If disabled, the bot will ignore hostile mobs.
+     */
+    private boolean blacklistDangerousBlocks = true;
+    
+    /**
      * This setting lets you configure what the bot should do if it needs to go to the nether
      * but can't find a nether portal immediately.
      * <p>
@@ -502,6 +509,10 @@ public class Settings implements IFailableConfigFile {
 
     public boolean isAutoRespawn() {
         return autoRespawn;
+    }
+    
+    public boolean shouldBlacklistDangerousBlocks() {
+    	return blacklistDangerousBlocks;
     }
 
     public boolean shouldReplantCrops() {

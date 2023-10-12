@@ -279,7 +279,19 @@ public class CollectFoodTask extends Task {
             Item bestRawFood = null;
             for (CookableFoodTarget cookable : COOKABLE_FOODS) {
                 if (!mod.getEntityTracker().entityFound(cookable.mobToKill)) continue;
-                Optional<Entity> nearest = mod.getEntityTracker().getClosestEntity(mod.getPlayer().getPos(), cookable.mobToKill);
+                Optional<Entity> nearest = mod.getEntityTracker().getClosestEntity(mod.getPlayer().getPos(), checkEntity -> {
+                	if (checkEntity instanceof HostileEntity) return true;
+                	Iterable<Entity> entities = mod.getWorld().getEntities();
+                    for (Entity entity : entities) {
+                        if (entity instanceof HostileEntity) {
+                            if (mod.getPlayer().squaredDistanceTo(entity.getPos()) < 150 &&
+                            		checkEntity.squaredDistanceTo(entity.getPos()) < 30) {
+                                return false;
+                            }
+                        }
+                    }
+                    return true;
+                }, cookable.mobToKill);
                 if (nearest.isEmpty()) continue; // ?? This crashed once?
                 int hungerPerformance = cookable.getCookedUnits();
                 double sqDistance = nearest.get().squaredDistanceTo(mod.getPlayer());
