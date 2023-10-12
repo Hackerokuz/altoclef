@@ -29,6 +29,13 @@ public class RunAwayFromHostilesTask extends CustomBaritoneGoalTask {
 
     @Override
     protected Goal newGoal(AltoClef mod) {
+    	if(mod.getClientBaritoneSettings().legitMine.value)
+        {
+            mod.getClientBaritoneSettings().blockBreakAdditionalPenalty.reset();
+            mod.getClientBaritoneSettings().blockPlacementPenalty.reset();
+            mod.getClientBaritoneSettings().costHeuristic.reset();
+        }
+        mod.getClientBaritoneSettings().avoidance.value = false;
         // We want to run away NOW
         mod.getClientBaritone().getPathingBehavior().forceCancel();
         return new GoalRunAwayFromHostiles(mod, _distanceToRun);
