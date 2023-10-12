@@ -191,7 +191,7 @@ public class DestroyBlockTask extends Task implements ITaskRequiresGrounded {
         Optional<Rotation> reach = LookHelper.getReach(_pos);
         if (reach.isPresent() && (mod.getPlayer().isTouchingWater() || mod.getPlayer().isOnGround()) &&
                 !mod.getFoodChain().needsToEat() && !WorldHelper.isInNetherPortal(mod) &&
-                mod.getClientBaritone().getPathingBehavior().isSafeToCancel()) {
+                !mod.getClientBaritone().getPathingBehavior().isPathing()) {
             setDebugState("Block in range, mining...");
             stuckCheck.reset();
             isMining = true;
