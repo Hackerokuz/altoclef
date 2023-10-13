@@ -17,6 +17,7 @@ import net.minecraft.block.enums.ChestType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.math.*;
@@ -115,6 +116,29 @@ public interface WorldHelper {
 
     static boolean isSolid(AltoClef mod, BlockPos pos) {
         return mod.getWorld().getBlockState(pos).isSolidBlock(mod.getWorld(), pos);
+    }
+    
+    static boolean isVulnurable(AltoClef mod) {
+        int armor = mod.getPlayer().getArmor();
+        float health = mod.getPlayer().getHealth();
+        if (armor <= 15 && health < 3) return true;
+        if (armor < 10 && health < 10) return true;
+        return armor < 5 && health < 18;
+    }
+    
+    static boolean isDangerous(AltoClef mod, BlockPos pos) {
+        Iterable<Entity> entities = mod.getWorld().getEntities();
+        for (Entity entity : entities) {
+            if (entity instanceof HostileEntity) {
+                if (!mod.getBlockTracker().unreachable(pos)) {
+                    if (mod.getPlayer().squaredDistanceTo(entity.getPos()) < 150 &&
+                    		pos.isWithinDistance(entity.getPos(), 30)) {
+                        return true;
+                    }
+                }
+            }
+        }
+    	return false;
     }
 
     /**

@@ -623,7 +623,7 @@ public class MobDefenseChain extends SingleTaskChain {
                 (mod.getPlayer().hasStatusEffect(StatusEffects.POISON) && witch.isEmpty())) {
             return true;
         }
-        if (isVulnurable(mod)) {
+        if (WorldHelper.isVulnurable(mod)) {
             // If hostile mobs are nearby...
             try {
                 ClientPlayerEntity player = mod.getPlayer();
@@ -642,14 +642,6 @@ public class MobDefenseChain extends SingleTaskChain {
             }
         }
         return false;
-    }
-
-    private boolean isVulnurable(AltoClef mod) {
-        int armor = mod.getPlayer().getArmor();
-        float health = mod.getPlayer().getHealth();
-        if (armor <= 15 && health < 3) return true;
-        if (armor < 10 && health < 10) return true;
-        return armor < 5 && health < 18;
     }
 
     public void setTargetEntity(Entity entity) {
