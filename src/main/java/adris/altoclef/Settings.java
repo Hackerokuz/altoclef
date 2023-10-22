@@ -73,6 +73,12 @@ public class Settings implements IFailableConfigFile {
      * If true, will show a timer.
      */
     private boolean showTimer = false;
+    
+
+    /**
+     * If true, will spread items through crafting grid.
+     */
+    private boolean spreadItemsToCraft = false;
 
     /**
      * The delay between moving items for crafting/furnace/any kind of inventory movement.
@@ -454,6 +460,10 @@ public class Settings implements IFailableConfigFile {
 
     public boolean shouldShowTimer() {
         return showTimer;
+    }
+    
+    public boolean shouldSpreadItemsToCraft( ) {
+    	return spreadItemsToCraft;
     }
 
     public float getResourcePickupRange() {
