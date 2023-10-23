@@ -270,7 +270,9 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
         _craftResetTimer.setInterval(CRAFT_RESET_TIMER_SECONDS + mod.getModSettings().getContainerItemMoveDelay() * 10 + CRAFT_RESET_TIMER_BONUS_SECONDS);
         if (_craftResetTimer.elapsed()) {
             Debug.logMessage("Refreshing crafting table.");
-            return new TimeoutWanderTask(5);
+            StorageHelper.closeScreen();
+//            return new TimeoutWanderTask(5);
+            _craftResetTimer.reset();
         }
 
         for (RecipeTarget target : _targets) {

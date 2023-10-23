@@ -1,32 +1,27 @@
 package adris.altoclef.tasks;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
+import adris.altoclef.tasks.slot.BalanceItemsInCraftingGridTask;
+import adris.altoclef.tasks.slot.EnsureFreeCursorSlotTask;
 import adris.altoclef.tasks.slot.MoveItemToSlotFromInventoryTask;
 import adris.altoclef.tasks.slot.ReceiveCraftingOutputSlotTask;
-import adris.altoclef.tasks.slot.SpreadItemToSlots;
 import adris.altoclef.tasks.slot.SpreadItemToSlotsFromInventoryTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.RecipeTarget;
 import adris.altoclef.util.helpers.ItemHelper;
-import adris.altoclef.util.helpers.StlHelper;
 import adris.altoclef.util.helpers.StorageHelper;
 import adris.altoclef.util.slots.CraftingTableSlot;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.slot.SlotActionType;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Assuming a crafting screen is open, crafts a recipe.
@@ -36,6 +31,7 @@ import java.util.Optional;
 public class CraftGenericManuallyTask extends Task {
 
 	private final RecipeTarget _target;
+	private BalanceItemsInCraftingGridTask _balanceItemsInCraftingGridTask = null;
 
 	public CraftGenericManuallyTask(RecipeTarget target) {
 		_target = target;
@@ -90,15 +86,42 @@ public class CraftGenericManuallyTask extends Task {
 						/ _target.getRecipe().outputCount());
 		if (requiredPerSlot > 64)
 			requiredPerSlot = 64;
-		if (mod.getModSettings().shouldSpreadItemsToCraft()) {
+		
 
+		if (_balanceItemsInCraftingGridTask == null || !_balanceItemsInCraftingGridTask.isActive() && _balanceItemsInCraftingGridTask.isFinished(mod)) {
+
+		if (mod.getModSettings().shouldSpreadItemsToCraft() && _target.getRecipe().getFilledSlotCount() != 1) {
 			for (int craftSlot = 0; craftSlot < _target.getRecipe().getSlotCount(); ++craftSlot) {
 				List<Slot> slots = new ArrayList<Slot>();
 				ItemTarget toFill = _target.getRecipe().getSlot(craftSlot);
+				Slot currentCraftSlot;
+				if (bigCrafting) {
+					// Craft in table
+					currentCraftSlot = CraftingTableSlot.getInputSlot(craftSlot,
+							_target.getRecipe().isBig());
+				} else {
+					// Craft in window
+					currentCraftSlot = PlayerSlot.getCraftInputSlot(craftSlot);
+				}
+				ItemStack present = StorageHelper.getItemStackInSlot(currentCraftSlot);
+				if (toFill == null || toFill.isEmpty() || !toFill.matches(present.getItem()))
+				{
+					if (present.getItem() != Items.AIR && !toFill.matches(present.getItem())) {
+
+						if(!StorageHelper.getItemStackInCursorSlot().isEmpty())
+						{
+							return new EnsureFreeCursorSlotTask();
+						}
+						// Move this item OUT if it should be empty
+						setDebugState("Found INVALID slot");
+						mod.getSlotHandler().clickSlot(currentCraftSlot, 0, SlotActionType.PICKUP);
+					}
+				}
 				for (int craftSlotInner = 0; craftSlotInner < _target.getRecipe().getSlotCount(); ++craftSlotInner) {
 					ItemTarget toFillInner = _target.getRecipe().getSlot(craftSlotInner);
 					if (!toFill.equals(toFillInner) || toFillInner == null || toFillInner.isEmpty())
 						continue;
+
 					Slot currentCraftSlotInner;
 					if (bigCrafting) {
 						// Craft in table
@@ -108,15 +131,24 @@ public class CraftGenericManuallyTask extends Task {
 						// Craft in window
 						currentCraftSlotInner = PlayerSlot.getCraftInputSlot(craftSlotInner);
 					}
-					ItemStack present = StorageHelper.getItemStackInSlot(currentCraftSlotInner);
-					boolean correctItem = toFill.matches(present.getItem());
-					boolean isSatisfied = correctItem && present.getCount() >= requiredPerSlot;
+					ItemStack presentInner = StorageHelper.getItemStackInSlot(currentCraftSlotInner);
+					boolean correctItem = toFillInner.matches(presentInner.getItem());
+					boolean isSatisfied = correctItem && (presentInner.getCount() >= requiredPerSlot || presentInner.getMaxCount() == 1);
 					if (isSatisfied)
 						continue;
+					boolean oversatisfies = present.getCount() > requiredPerSlot;
+					if (oversatisfies) {
+						if(!StorageHelper.getItemStackInCursorSlot().isEmpty())
+						{
+							return new EnsureFreeCursorSlotTask();
+						}
+						setDebugState(
+								"OVER SATISFIED slot! Right clicking slot to extract half and spread it out more.");
+						mod.getSlotHandler().clickSlot(currentCraftSlot, 0, SlotActionType.PICKUP);
+					}
 					slots.add(currentCraftSlotInner);
 				}
 				if (slots.size() > 0) {
-					Debug.logMessage("" + slots.size());
 					return new SpreadItemToSlotsFromInventoryTask(new ItemTarget(toFill, requiredPerSlot),
 							slots.toArray(new Slot[0]));
 				}
@@ -142,7 +174,7 @@ public class CraftGenericManuallyTask extends Task {
 					}
 				} else {
 					boolean correctItem = toFill.matches(present.getItem());
-					boolean isSatisfied = correctItem && present.getCount() >= requiredPerSlot;
+					boolean isSatisfied = correctItem && (present.getCount() >= requiredPerSlot || present.getMaxCount() == 1);
 					if (!isSatisfied) {
 						// We have items that satisfy, but we CAN NOT fill in the current slot!
 						// In that case, just grab from the output.
@@ -170,6 +202,29 @@ public class CraftGenericManuallyTask extends Task {
 				}
 			}
 		}
+		}
+
+		if (requiredPerSlot != 1)
+			for (int craftSlot = 0; craftSlot < _target.getRecipe().getSlotCount(); ++craftSlot) {
+				ItemTarget toFill = _target.getRecipe().getSlot(craftSlot);
+				Slot currentCraftSlot;
+				if (bigCrafting) {
+					// Craft in table
+					currentCraftSlot = CraftingTableSlot.getInputSlot(craftSlot, _target.getRecipe().isBig());
+				} else {
+					// Craft in window
+					currentCraftSlot = PlayerSlot.getCraftInputSlot(craftSlot);
+				}
+				ItemStack present = StorageHelper.getItemStackInSlot(currentCraftSlot);
+				boolean oversatisfies = present.getCount() > requiredPerSlot;
+				if (oversatisfies || _balanceItemsInCraftingGridTask != null && !_balanceItemsInCraftingGridTask.isFinished(mod)) {
+					_balanceItemsInCraftingGridTask = new BalanceItemsInCraftingGridTask(toFill, requiredPerSlot, currentCraftSlot);
+					return _balanceItemsInCraftingGridTask;
+				} else if (toFill != null && !toFill.isEmpty()) {
+					break;
+				}
+			}
+		else _balanceItemsInCraftingGridTask = null;
 
 		// Ensure our cursor is empty/can receive our item
 		ItemStack cursor = StorageHelper.getItemStackInCursorSlot();
@@ -184,7 +239,7 @@ public class CraftGenericManuallyTask extends Task {
 			}
 		}
 
-		if (!StorageHelper.getItemStackInSlot(outputSlot).isEmpty()) {
+		if (!StorageHelper.getItemStackInSlot(outputSlot).isEmpty() && StorageHelper.getItemStackInSlot(outputSlot).getItem().equals(_target.getOutputItem())) {
 			return new ReceiveCraftingOutputSlotTask(outputSlot, _target.getTargetCount());
 		} else {
 			// Wait

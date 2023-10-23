@@ -5,29 +5,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import net.minecraft.client.MinecraftClient;
-
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.util.ItemTarget;
 import adris.altoclef.util.helpers.StlHelper;
 import adris.altoclef.util.helpers.StorageHelper;
-import adris.altoclef.util.slots.CraftingTableSlot;
-import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.SlotActionType;
 
-public class SpreadItemToSlots extends Task {
+public class SpreadItemToSlotsTask extends Task {
 
     private final ItemTarget _toMove;
     private final Slot[] _slotsToSpreadTo;
     private final Function<AltoClef, List<Slot>> _getMovableSlots;
 
-    public SpreadItemToSlots(ItemTarget toMove, Slot[] slotsToSpreadTo, Function<AltoClef, List<Slot>> getMovableSlots) {
+    public SpreadItemToSlotsTask(ItemTarget toMove, Slot[] slotsToSpreadTo, Function<AltoClef, List<Slot>> getMovableSlots) {
         _toMove = toMove;
         _slotsToSpreadTo = slotsToSpreadTo;
         _getMovableSlots = getMovableSlots;
@@ -72,7 +69,7 @@ public class SpreadItemToSlots extends Task {
 	                    }
 	                }
 	                if (toPlace.isEmpty()) {
-//	                    Debug.logError("Called SpreadItemToSlots when item/not enough item is available! valid items: " + StlHelper.toString(validItems, Item::getTranslationKey));
+	                    Debug.logError("Called SpreadItemToSlots when item/not enough item is available! valid items: " + StlHelper.toString(validItems, Item::getTranslationKey));
 	                    return null;
 	                }
 	                mod.getSlotHandler().clickSlot(toPlace.get(), 0, SlotActionType.PICKUP);
@@ -80,25 +77,20 @@ public class SpreadItemToSlots extends Task {
 	            }
 	
 	            int currentlyPlaced = Arrays.asList(validItems).contains(atTarget.getItem()) ? atTarget.getCount() : 0;
-//	            if (currentHeld.getCount() + currentlyPlaced <= _toMove.getTargetCount()) {
-//	                // Just place all of 'em
-//	                mod.getSlotHandler().clickSlot(_destination, 0, SlotActionType.PICKUP);
-//	            } else {
+		            if(currentHeld.getItem().getMaxCount() == 1) {
+		            	return new MoveItemToSlotTask(_toMove, _destination, _getMovableSlots);
+		            }
 	                // Place one at a time.
 	            	ClientPlayerEntity player = MinecraftClient.getInstance().player;
 	            	if (player == null) return null;
 	                int syncId = player.currentScreenHandler.syncId;
-                	Debug.logMessage("Doing the funky #1");
-                	Debug.logMessage("slots to do " + _slotsToSpreadTo.length);
+	                // Minecraft seems to send this funky packet before the slots you actually want to spread to... IDK why, Mojang is weird like that
 	                mod.getController().clickSlot(syncId, -999, 0, SlotActionType.QUICK_CRAFT, player);
 	                for (Slot craftSlot : _slotsToSpreadTo) {
-	                	Debug.logMessage("Filling " + craftSlot);
-//	                	if(!StorageHelper.getItemStackInSlot(craftSlot).isEmpty()) continue;
 	                	mod.getSlotHandler().clickSlotForce(craftSlot, 1, SlotActionType.QUICK_CRAFT);
 					}
-                	Debug.logMessage("Doing the funky #2");
+	                // Minecraft seems to send this funky packet after the slots you actually want to spread to... IDK why, Mojang is weird like that
 	                mod.getController().clickSlot(syncId, -999, 2, SlotActionType.QUICK_CRAFT, player);
-//	            }
 			}
             return null;
         }
@@ -114,14 +106,14 @@ public class SpreadItemToSlots extends Task {
     public boolean isFinished(AltoClef mod) {
     	for (Slot slot : _slotsToSpreadTo) {
             ItemStack atDestination = StorageHelper.getItemStackInSlot(slot);
-            if (!(_toMove.matches(atDestination.getItem()) && atDestination.getCount() >= _toMove.getTargetCount())) return false;
+            if (!(_toMove.matches(atDestination.getItem()) && (atDestination.getCount() >= _toMove.getTargetCount() || atDestination.getMaxCount() > 1))) return false;
 		}
         return true;
     }
 
     @Override
     protected boolean isEqual(Task obj) {
-        if (obj instanceof SpreadItemToSlots task) {
+        if (obj instanceof SpreadItemToSlotsTask task) {
             return task._toMove.equals(_toMove) && task._slotsToSpreadTo.equals(_slotsToSpreadTo);
         }
         return false;
