@@ -132,14 +132,14 @@ public abstract class ResourceTask extends Task implements ITaskCanForce {
                         return _pickupTask;
                     }
                     // Only get items that are CLOSE to us.
-                    Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), entity -> WorldHelper.isDangerous(mod, entity.getBlockPos()), _itemTargets);
+                    Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), entity -> !WorldHelper.isDangerous(mod, entity.getBlockPos()), _itemTargets);
                     if (closest.isPresent() && !closest.get().isInRange(mod.getPlayer(), 10)) {
                         return onResourceTick(mod);
                     }
                 }
 
                 double range = mod.getModSettings().getResourcePickupRange();
-                Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), entity -> WorldHelper.isDangerous(mod, entity.getBlockPos()), _itemTargets);
+                Optional<ItemEntity> closest = mod.getEntityTracker().getClosestItemDrop(mod.getPlayer().getPos(), entity -> !WorldHelper.isDangerous(mod, entity.getBlockPos()), _itemTargets);
                 if (range < 0 || (closest.isPresent() && closest.get().isInRange(mod.getPlayer(), range)) || (_pickupTask.isActive() && !_pickupTask.isFinished(mod))) {
                     setDebugState("Picking up");
                     return _pickupTask;
