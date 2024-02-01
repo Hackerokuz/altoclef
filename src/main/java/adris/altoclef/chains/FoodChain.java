@@ -84,7 +84,12 @@ public class FoodChain extends SingleTaskChain {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;
         }
-        if (mod.getMobDefenseChain().isPuttingOutFire()) {
+        if (mod.getMobDefenseChain().isPuttingOutFire() 
+        		|| mod.getMobDefenseChain().isShielding() 
+        		|| mod.getPlayer().isBlocking()
+        		|| mod.getMobDefenseChain().isDoingAcrobatics()
+        		|| !mod.getEntityTracker().getHostiles().isEmpty() && mod.getPlayer().getHealth() < 4
+        		) {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;
         }
