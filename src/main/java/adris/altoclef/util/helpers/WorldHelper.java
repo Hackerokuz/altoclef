@@ -441,6 +441,11 @@ public interface WorldHelper {
         return 12542 <= time && time <= 23992;
     }
     
+    public static boolean isSurroundedByHostiles(AltoClef mod) {
+    	List<Entity> hostiles = mod.getEntityTracker().getHostiles();
+    	return isSurrounded(mod, hostiles);
+    }
+    
     // Function to check if the player is surrounded on two or more sides
     public static boolean isSurrounded(AltoClef mod, List<Entity> entities) {
     	
