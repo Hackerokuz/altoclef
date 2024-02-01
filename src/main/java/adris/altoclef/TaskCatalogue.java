@@ -71,7 +71,7 @@ public class TaskCatalogue {
             mine("diamond", MiningRequirement.IRON, new Block[]{Blocks.DIAMOND_ORE, Blocks.DEEPSLATE_DIAMOND_ORE}, Items.DIAMOND);
             mine("emerald", MiningRequirement.IRON, new Block[]{Blocks.EMERALD_ORE, Blocks.DEEPSLATE_EMERALD_ORE}, Items.EMERALD);
             mine("redstone", MiningRequirement.IRON, new Block[]{Blocks.REDSTONE_ORE, Blocks.DEEPSLATE_REDSTONE_ORE}, Items.REDSTONE);
-            mine("lapis_lazuli", MiningRequirement.IRON, new Block[]{Blocks.LAPIS_ORE, Blocks.DEEPSLATE_LAPIS_ORE}, Items.LAPIS_LAZULI);
+            mine("lapis_lazuli", MiningRequirement.STONE, new Block[]{Blocks.LAPIS_ORE, Blocks.DEEPSLATE_LAPIS_ORE}, Items.LAPIS_LAZULI);
             alias("lapis", "lapis_lazuli");
             mine("amethyst_shard", MiningRequirement.WOOD, Blocks.AMETHYST_CLUSTER, Items.AMETHYST_SHARD);
             mine("pointed_dripstone", MiningRequirement.WOOD, Blocks.POINTED_DRIPSTONE, Items.POINTED_DRIPSTONE);
@@ -101,7 +101,7 @@ public class TaskCatalogue {
             simple("egg", Items.EGG, CollectEggsTask::new);
             mob("bone", Items.BONE, SkeletonEntity.class);
             mob("gunpowder", Items.GUNPOWDER, CreeperEntity.class);
-            mob("ender_pearl", Items.ENDER_PEARL, EndermanEntity.class).anyDimension();
+            simple("ender_pearl", Items.ENDER_PEARL, KillEndermanTask::new);
             mob("spider_eye", Items.SPIDER_EYE, SpiderEntity.class);
             mob("leather", Items.LEATHER, CowEntity.class);
             mob("feather", Items.FEATHER, ChickenEntity.class);
@@ -191,6 +191,9 @@ public class TaskCatalogue {
 
 
             // MATERIALS
+            //mine("netherite_upgrade_smithing_template", MiningRequirement.HAND, Blocks.CHEST, Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE).forceDimension(Dimension.NETHER);
+            simple("netherite_upgrade_smithing_template", Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE, GetSmithingTemplateTask::new);
+            alias("netherite_upgrade", "netherite_upgrade_smithing_template");
             simple("planks", ItemHelper.PLANKS, CollectPlanksTask::new).dontMineIfPresent();
             // Per-tree Planks. At the moment, nether planks need to be specified that their logs are in the nether.
             for (CataloguedResource woodCatalogue : woodTasks("planks", wood -> wood.planks, (wood, count) -> {
@@ -727,6 +730,11 @@ public class TaskCatalogue {
     private static CataloguedResource simple(String name, Item matches, Function<Integer, ResourceTask> getTask) {
         return simple(name, new Item[]{matches}, getTask);
     }
+
+    // TODO: Do I really need this?
+    //private static CataloguedResource task(Item matches, Function<Integer, ResourceTask> getTask){
+    //
+    //}
 
     private static CataloguedResource mine(String name, MiningRequirement requirement, Item[] toMine, Item... targets) {
         Block[] toMineBlocks = new Block[toMine.length];
