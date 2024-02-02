@@ -2,6 +2,7 @@ package adris.altoclef.tasks.construction;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,7 +27,9 @@ import adris.altoclef.util.slots.Slot;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.FallingBlock;
 import net.minecraft.block.FluidBlock;
+import net.minecraft.block.GravelBlock;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
@@ -576,6 +579,20 @@ class TunnelToMine {
                                 closest = pos.offset(direction.getOpposite());
                                 closestDistance = distance;
                             }
+            	        } else if (mod.getWorld().getBlockState(neighborPos).getBlock() instanceof FallingBlock) {
+            	        	for (int i = 0; i < mod.getWorld().getHeight(); i++)
+							{
+            	        		if(mod.getWorld().getBlockState(neighborPos).getBlock() instanceof FallingBlock) continue;
+            	        		if(!(mod.getWorld().getBlockState(neighborPos.up(i)).getBlock() instanceof FluidBlock)) break;
+								if(mod.getWorld().getBlockState(neighborPos.up(i)).getBlock() instanceof FluidBlock) {
+		            	        	double distance = pos.getSquaredDistance(corner1);
+		                            if (distance < closestDistance) {
+		                                closest = pos.offset(direction.getOpposite());
+		                                closestDistance = distance;
+		                            }
+		                            break;
+								}
+							}
             	        }
             	    }
                 }
