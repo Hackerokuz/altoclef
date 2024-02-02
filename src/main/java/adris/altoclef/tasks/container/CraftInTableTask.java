@@ -1,5 +1,11 @@
 package adris.altoclef.tasks.container;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 import adris.altoclef.AltoClef;
 import adris.altoclef.tasks.CraftGenericManuallyTask;
 import adris.altoclef.tasks.CraftGenericWithRecipeBooksTask;
@@ -27,8 +33,6 @@ import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.screen.CraftingScreenHandler;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.util.math.BlockPos;
-
-import java.util.*;
 
 /**
  * Crafts an item in a crafting table, obtaining and placing the table down if none was found.
@@ -392,6 +396,7 @@ class DoCraftInTableTask extends DoStuffInContainerTask {
         _craftResetTimer.setInterval(interval);
 
         // If the craft reset timer has elapsed, return a TimeoutWanderTask
+
         if (_craftResetTimer.elapsed()) {
             return new TimeoutWanderTask(5);
         }
