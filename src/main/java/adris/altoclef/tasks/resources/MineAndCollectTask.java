@@ -3,8 +3,10 @@ package adris.altoclef.tasks.resources;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 
 import adris.altoclef.AltoClef;
@@ -43,6 +45,7 @@ import net.minecraft.item.MiningToolItem;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 
@@ -315,6 +318,9 @@ public class MineAndCollectTask extends ResourceTask
 				if (mod.getClientBaritoneSettings().legitMine.value && _isOre)
 				{
 					return WorldHelper.canBreak(mod, check) && isNextToAir(mod, check) && isBlockVisible(check)
+							&& (!isDangerousBlock(mod, check));
+				} else if (mod.getClientBaritoneSettings().allowOnlyExposedOres.value && _isOre) {
+					return WorldHelper.canBreak(mod, check) && isNextToAir(mod, check, mod.getClientBaritoneSettings().allowOnlyExposedOresDistance.value)
 							&& (!isDangerousBlock(mod, check));
 				}
 
@@ -643,13 +649,54 @@ public class MineAndCollectTask extends ResourceTask
 			}
 			return false;
 		}
-
+		
 		protected static boolean isNextToAir(AltoClef mod, BlockPos pos)
 		{
+			return isNextToAir(mod, pos, 1);
+		}
 
-			return WorldHelper.isAir(mod, pos.up()) || WorldHelper.isAir(mod, pos.down())
-					|| WorldHelper.isAir(mod, pos.east()) || WorldHelper.isAir(mod, pos.west())
-					|| WorldHelper.isAir(mod, pos.north()) || WorldHelper.isAir(mod, pos.south());
+		protected static boolean isNextToAir(AltoClef mod, BlockPos pos, int distanceToCheck)
+		{
+			
+			boolean isPosExposed = false;
+	    	
+	    	BlockState currBlockState = mod.getWorld().getBlockState(pos);
+
+			outerloop:
+			for (Direction direction : Direction.values()) {
+				boolean foundAir = false;
+				for (int i = 1; i <= distanceToCheck+1; i++) {
+					if(i >= distanceToCheck && foundAir) {
+						isPosExposed = true;
+						break outerloop;
+					}
+					BlockState neighbourBlockState = mod.getWorld().getBlockState(pos.offset(direction, i));
+					if(!mod.getWorld().getBlockState(pos.offset(direction, i)).isOpaque()) {
+						foundAir = true;
+					} else {
+						break;
+					}
+	            }
+			}
+	    	
+
+	        return isPosExposed;
+			
+//			for (int dx = -distanceToCheck; dx <= distanceToCheck; dx++) {
+//	            for (int dy = -distanceToCheck; dy <= distanceToCheck; dy++) {
+//	                for (int dz = -distanceToCheck; dz <= distanceToCheck; dz++) {
+//	                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= distanceToCheck
+//	                            && WorldHelper.isAir(mod, new BlockPos(dx, dy, dz))) {
+//	                        return true;
+//	                    }
+//	                }
+//	            }
+//	        }
+//	        return false;
+
+//			return WorldHelper.isAir(mod, pos.up()) || WorldHelper.isAir(mod, pos.down())
+//					|| WorldHelper.isAir(mod, pos.east()) || WorldHelper.isAir(mod, pos.west())
+//					|| WorldHelper.isAir(mod, pos.north()) || WorldHelper.isAir(mod, pos.south());
 //        	return mod.getWorld().getBlockState(pos.up()).getBlock() == Blocks.CAVE_AIR
 //        			|| mod.getWorld().getBlockState(pos.down()).getBlock() == Blocks.CAVE_AIR
 //        			|| mod.getWorld().getBlockState(pos.east()).getBlock() == Blocks.CAVE_AIR
