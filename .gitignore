@@ -7,6 +7,7 @@ baritone/
 *.ipr
 *.iws
 
+.project
 # IntelliJ
 out/
 # mpeltonen/sbt-idea plugin
