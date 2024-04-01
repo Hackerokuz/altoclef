@@ -3,10 +3,8 @@ package adris.altoclef.tasks.resources;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 
 import adris.altoclef.AltoClef;
@@ -658,29 +656,43 @@ public class MineAndCollectTask extends ResourceTask
 		protected static boolean isNextToAir(AltoClef mod, BlockPos pos, int distanceToCheck)
 		{
 			
-			boolean isPosExposed = false;
-	    	
-	    	BlockState currBlockState = mod.getWorld().getBlockState(pos);
-
+			
 			outerloop:
-			for (Direction direction : Direction.values()) {
-				boolean foundAir = false;
-				for (int i = 1; i <= distanceToCheck+1; i++) {
-					if(i >= distanceToCheck && foundAir) {
-						isPosExposed = true;
-						break outerloop;
-					}
-					BlockState neighbourBlockState = mod.getWorld().getBlockState(pos.offset(direction, i));
-					if(!mod.getWorld().getBlockState(pos.offset(direction, i)).isOpaque()) {
-						foundAir = true;
-					} else {
-						break;
-					}
+	        for (Direction direction : Direction.values()) {
+	            for (int i = 1; i <= distanceToCheck; i++) {
+	                BlockState neighbourBlockState = mod.getWorld().getBlockState(pos.offset(direction, i));
+	                if(neighbourBlockState.isOpaque()) {
+	                    continue outerloop;
+	                }
 	            }
-			}
-	    	
-
-	        return isPosExposed;
+	            return true;
+	        }
+			
+			return false;
+			
+//			boolean isPosExposed = false;
+//	    	
+//	    	BlockState currBlockState = mod.getWorld().getBlockState(pos);
+//
+//			outerloop:
+//			for (Direction direction : Direction.values()) {
+//				boolean foundAir = false;
+//				for (int i = 1; i <= distanceToCheck+1; i++) {
+//					if(i >= distanceToCheck && foundAir) {
+//						isPosExposed = true;
+//						break outerloop;
+//					}
+//					BlockState neighbourBlockState = mod.getWorld().getBlockState(pos.offset(direction, i));
+//					if(!mod.getWorld().getBlockState(pos.offset(direction, i)).isOpaque()) {
+//						foundAir = true;
+//					} else {
+//						break;
+//					}
+//	            }
+//			}
+//	    	
+//
+//	        return isPosExposed;
 			
 //			for (int dx = -distanceToCheck; dx <= distanceToCheck; dx++) {
 //	            for (int dy = -distanceToCheck; dy <= distanceToCheck; dy++) {
