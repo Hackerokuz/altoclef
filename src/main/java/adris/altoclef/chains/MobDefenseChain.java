@@ -1,23 +1,33 @@
 package adris.altoclef.chains;
 
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import adris.altoclef.AltoClef;
 import adris.altoclef.Debug;
 import adris.altoclef.TaskCatalogue;
 import adris.altoclef.control.KillAura;
-import adris.altoclef.tasks.ResourceTask;
-import adris.altoclef.tasks.construction.PlaceStructureBlockTask;
 import adris.altoclef.tasks.construction.ProjectileProtectionWallTask;
 import adris.altoclef.tasks.entity.KillEntitiesTask;
 import adris.altoclef.tasks.movement.CustomBaritoneGoalTask;
-import adris.altoclef.tasks.movement.DodgeProjectilesTask;
 import adris.altoclef.tasks.movement.RunAwayFromCreepersTask;
 import adris.altoclef.tasks.movement.RunAwayFromHostilesTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
-import adris.altoclef.tasks.squashed.CataloguedResourceTask;
 import adris.altoclef.tasksystem.Task;
 import adris.altoclef.tasksystem.TaskRunner;
 import adris.altoclef.util.baritone.CachedProjectile;
-import adris.altoclef.util.helpers.*;
+import adris.altoclef.util.helpers.BaritoneHelper;
+import adris.altoclef.util.helpers.EntityHelper;
+import adris.altoclef.util.helpers.LookHelper;
+import adris.altoclef.util.helpers.ProjectileHelper;
+import adris.altoclef.util.helpers.StorageHelper;
+import adris.altoclef.util.helpers.WorldHelper;
 import adris.altoclef.util.progresscheck.MovementProgressChecker;
 import adris.altoclef.util.slots.PlayerSlot;
 import adris.altoclef.util.slots.Slot;
@@ -32,9 +42,31 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.*;
+import net.minecraft.entity.mob.BlazeEntity;
+import net.minecraft.entity.mob.CaveSpiderEntity;
+import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.mob.DrownedEntity;
+import net.minecraft.entity.mob.EndermanEntity;
+import net.minecraft.entity.mob.GhastEntity;
+import net.minecraft.entity.mob.HoglinEntity;
+import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.MagmaCubeEntity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.PiglinBruteEntity;
+import net.minecraft.entity.mob.PiglinEntity;
+import net.minecraft.entity.mob.PillagerEntity;
+import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.mob.SlimeEntity;
+import net.minecraft.entity.mob.SpiderEntity;
+import net.minecraft.entity.mob.StrayEntity;
+import net.minecraft.entity.mob.VindicatorEntity;
+import net.minecraft.entity.mob.WardenEntity;
+import net.minecraft.entity.mob.WitchEntity;
+import net.minecraft.entity.mob.WitherSkeletonEntity;
+import net.minecraft.entity.mob.ZoglinEntity;
+import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.mob.ZombieVillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.DragonFireballEntity;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
@@ -47,13 +79,6 @@ import net.minecraft.util.UseAction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Difficulty;
-
-import java.util.*;
-import java.util.function.Predicate;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 // TODO: Check on the anti-surround system
 // TODO: Optimise shielding against spiders and skeletons
@@ -222,15 +247,11 @@ public class MobDefenseChain extends SingleTaskChain
 
 		if (mod.getWorld().getDifficulty() == Difficulty.PEACEFUL) return Float.NEGATIVE_INFINITY;
 
-		if (!_movementChecker.check(mod))
-		{
-			System.out.println("_movementChecker.check is FALSE");
-		}
+		// Attempt to get baritone to keep away from mobs as much as possible. Batter safe then sorry after all...
 		if (WorldHelper.isVulnurable(mod) && !(_runAwayTask != null && _runAwayTask.isActive())
 				|| !_movementChecker.check(mod))
 		{
 			// if set above 1 it's "encourage breaking" instead
-//			mod.getClientBaritoneSettings().avoidBreakingMultiplier.value = 16.0;
 			mod.getClientBaritoneSettings().avoidBreakingMultiplier.value = 2.0;
 			mod.getClientBaritoneSettings().blockBreakAdditionalPenalty.value = 0.0;
 		} else
@@ -238,24 +259,16 @@ public class MobDefenseChain extends SingleTaskChain
 			mod.getClientBaritoneSettings().avoidBreakingMultiplier.reset();
 			mod.getClientBaritoneSettings().blockBreakAdditionalPenalty.reset();
 		}
-
-//		if (!_movementChecker.check(mod))
-//		{
-//			mod.getClientBaritoneSettings().costHeuristic.value = 18000.0;
-//		}
+		// Try to STAY AWAY from spawners as they are causing A LOT of problems.
 		mod.getClientBaritoneSettings().mobSpawnerAvoidanceCoefficient.value = 3200.0;
 		mod.getClientBaritoneSettings().mobSpawnerAvoidanceRadius.value = WorldHelper.isVulnurable(mod) ? 24 : 16;
 		if (mod.getItemStorage().hasItem(Items.SHIELD) || mod.getItemStorage().hasItemInOffhand(Items.SHIELD))
 		{
-//			mod.getClientBaritoneSettings().mobAvoidanceRadius.value = WorldHelper.isVulnurable(mod) ? 20 : 12;
-//			mod.getClientBaritoneSettings().mobAvoidanceRadius.value = 20;
 			mod.getClientBaritoneSettings().mobAvoidanceRadius.value = 20;
-//			mod.getClientBaritoneSettings().mobAvoidanceCoefficient.value = _movementChecker.check(mod) ? 46.0 : 0.6;
 			mod.getClientBaritoneSettings().mobAvoidanceCoefficient.value = 46.0;
 		} else
 		{
 			mod.getClientBaritoneSettings().mobAvoidanceRadius.value = 20;
-//			mod.getClientBaritoneSettings().mobAvoidanceCoefficient.value = _movementChecker.check(mod) ? 60.0 : 8.0;
 			mod.getClientBaritoneSettings().mobAvoidanceCoefficient.value = 60.0;
 		}
 		// Apply avoidance if not already running away from mobs, avoiding mobs if at
@@ -335,9 +348,6 @@ public class MobDefenseChain extends SingleTaskChain
 					&& mod.getClientBaritone().getPathingBehavior().isSafeToCancel()
 					&& !mod.getEntityTracker().entityFound(PotionEntity.class) && isProjectileClose(mod))
 			{
-//				mod.getClientBaritone().getPathingBehavior().requestPause();
-//				mod.getClientBaritone().getPathingBehavior().cancelEverything();
-//				mod.getClientBaritone().getPathingBehavior().forceCancel();
 				ItemStack shieldSlot = StorageHelper.getItemStackInSlot(PlayerSlot.OFFHAND_SLOT);
 				if (shieldSlot.getItem() != Items.SHIELD)
 				{
@@ -364,6 +374,7 @@ public class MobDefenseChain extends SingleTaskChain
 
 		synchronized (BaritoneHelper.MINECRAFT_LOCK)
 		{
+			// Deal with close spiders before others as they jump at the player and cave spiders give poison.
 			Optional<Entity> entity = mod.getEntityTracker().getClosestEntity(e -> {
 				if (e instanceof CaveSpiderEntity)
 				{
@@ -376,7 +387,6 @@ public class MobDefenseChain extends SingleTaskChain
 					SpiderEntity sEntity = (SpiderEntity) e;
 					if (sEntity.isInAttackRange(mod.getPlayer()) && EntityHelper.isAngryAtPlayer(mod, sEntity)
 							&& LookHelper.seesPlayer(sEntity, mod.getPlayer(), SAFE_KEEP_DISTANCE)
-					// && sEntity.distanceTo(mod.getPlayer()) < 4 && sEntity.isAttacking()
 					) return true;
 				}
 				return false;
@@ -387,7 +397,6 @@ public class MobDefenseChain extends SingleTaskChain
 			{
 				if (mod.getClientBaritone().getPathingBehavior().isSafeToCancel())
 				{
-//					mod.getClientBaritone().getPathingBehavior().requestPause();
 					LookHelper.lookAt(mod, entity.get().getEyePos());
 					startShielding(mod);
 					doForceField(mod);
@@ -448,7 +457,6 @@ public class MobDefenseChain extends SingleTaskChain
 
 			if (!hostiles.isEmpty())
 			{
-
 				if (WorldHelper.isSurrounded(mod, hostiles))
 				{
 					mod.getClientBaritoneSettings().avoidance.value = false;
@@ -476,7 +484,7 @@ public class MobDefenseChain extends SingleTaskChain
 						else if (isRangedOrPoisnous) annoyingRange = 20;
 						boolean isClose = hostile.isInRange(mod.getPlayer(), annoyingRange);
 
-						if (isClose /* && !isRangedOrPoisnous */)
+						if (isClose)
 						{
 							isClose = LookHelper.seesPlayer(hostile, mod.getPlayer(), annoyingRange);
 						}
@@ -558,17 +566,23 @@ public class MobDefenseChain extends SingleTaskChain
 				for (Entity ToDealWith : toDealWith)
 				{
 					if (ToDealWith.getClass() == SlimeEntity.class || ToDealWith.getClass() == MagmaCubeEntity.class
-							|| ToDealWith.getItemsEquipped() != null)
+							|| ToDealWith.getItemsEquipped() != null && !(ToDealWith instanceof SkeletonEntity ) 
+							 && !(ToDealWith instanceof EndermanEntity )
+							 && !(ToDealWith instanceof DrownedEntity ))
 					{
+						// Entities that have a sword or can split into more entities after being killed count as two entities as they are more dangerous then one entity of same type
 						numberOfProblematicEntities += 2;
 					} else if (ToDealWith instanceof SkeletonEntity && ToDealWith.getItemsEquipped() == Items.BOW)
 					{
+						// Any skeleton with a bow is REALLY dangerous so we'll count them as 6 entities
 						numberOfProblematicEntities += 6;
 					} else if (ToDealWith instanceof EndermanEntity)
 					{
+						// Enderman can be also really dangerous as they hit hard.
 						numberOfProblematicEntities += 3;
 					} else if (ToDealWith instanceof DrownedEntity && ToDealWith.getItemsEquipped() == Items.TRIDENT)
 					{
+						// Drowned with tridents are also REALLY dangerous, maybe we should increase this??
 						numberOfProblematicEntities += 5;
 					}
 
@@ -637,6 +651,7 @@ public class MobDefenseChain extends SingleTaskChain
 							// We can't deal with it
 							mod.getClientBaritoneSettings().avoidance.value = false;
 							_runAwayTask = new RunAwayFromHostilesTask(
+									// Decrease distance from the mob if we are stuck so that baritone gets away faster.
 									!_movementChecker.check(mod) ? DANGER_KEEP_DISTANCE : 4, true);
 							setTask(_runAwayTask);
 							return 80;
@@ -651,6 +666,7 @@ public class MobDefenseChain extends SingleTaskChain
 						{
 							mod.getClientBaritoneSettings().avoidance.value = false;
 							mod.getClientBaritoneSettings().costHeuristic.value = 60.0;
+							// If hostile entity is vary close get baritone to keep small distance from the mob and if the mob is far enough away that we can afford to wait for pathfiner to complete its search get baritone to run away further,
 							if (mod.getEntityTracker().getClosestEntity((e) -> {
 								return e.distanceTo(mod.getPlayer()) < 13;
 							}, HostileEntity.class).isPresent())
@@ -666,6 +682,7 @@ public class MobDefenseChain extends SingleTaskChain
 					&& mod.getItemStorage().getItemCount(Items.DIRT) < 3
 					|| _getThrouwawayBlocks.isActive() && !_getThrouwawayBlocks.isFinished(mod))
 			{
+				// Get some throw away blocks like dirt so that we can block arrows when we dont have a shield.
 				if (mod.getItemStorage().getItemCount(Items.DIRT) >= 16
 						|| (StorageHelper.getNumberOfThrowawayBlocks(mod) - 1) > 2)
 				{
@@ -677,6 +694,7 @@ public class MobDefenseChain extends SingleTaskChain
 				}
 			} else if (bestSword == null)
 			{
+				// Get a basic weapon if we dont have one already.
 				setTask(TaskCatalogue.getItemTask(Items.STONE_SWORD, 1));
 				return 60;
 			} else if (!mod.getItemStorage().hasItem(Items.SHIELD)
@@ -690,6 +708,7 @@ public class MobDefenseChain extends SingleTaskChain
 											.getSlotsWithItemPlayerInventory(false, Items.SHIELD).get(0))
 									.getDamage() > Items.SHIELD.getMaxDamage() * 0.62))
 			{
+				// Get a shield if we dont have a decent one.
 				Boolean hasGoodShield = false;
 				for (Slot slot : mod.getItemStorage().getSlotsWithItemScreen(Items.SHIELD))
 				{
@@ -715,6 +734,7 @@ public class MobDefenseChain extends SingleTaskChain
 											mod.getItemStorage().getSlotsWithItemPlayerInventory(false, item).get(0))
 									.getDamage() > item.getMaxDamage() * 0.7)
 					{
+						// Get a good sword if the one we have is 70% damaged
 						if (mod.getItemStorage().hasItem(Items.STONE_SWORD))
 							setTask(TaskCatalogue.getItemTask(Items.IRON_SWORD, 1));
 						else if (mod.getItemStorage().getItemCount(Items.STONE_SWORD) == 0)
@@ -867,6 +887,7 @@ public class MobDefenseChain extends SingleTaskChain
 	private boolean isProjectileClose(AltoClef mod)
 	{
 		List<CachedProjectile> projectiles = mod.getEntityTracker().getProjectiles();
+		// Find a skeleton that is about to shoot.
 		Optional<Entity> entity = mod.getEntityTracker().getClosestEntity((e) -> {
 			if (e instanceof SkeletonEntity
 					&& (EntityHelper.isAngryAtPlayer(mod, e) || ((SkeletonEntity) e).getItemUseTime() > 18)
@@ -925,7 +946,7 @@ public class MobDefenseChain extends SingleTaskChain
 					}
 				}
 			}
-
+			// Check if any close by entities are going to attack us and look at them to block the attack.
 			if (entity.isPresent() && mod.getEntityTracker().getClosestEntity((e) -> {
 				if ((e instanceof SpiderEntity || e instanceof ZombieEntity || e instanceof ZombieVillagerEntity
 						|| e instanceof CaveSpiderEntity) && EntityHelper.isAngryAtPlayer(mod, e)
