@@ -670,56 +670,10 @@ public class MineAndCollectTask extends ResourceTask
 			
 			return false;
 			
-//			boolean isPosExposed = false;
-//	    	
-//	    	BlockState currBlockState = mod.getWorld().getBlockState(pos);
-//
-//			outerloop:
-//			for (Direction direction : Direction.values()) {
-//				boolean foundAir = false;
-//				for (int i = 1; i <= distanceToCheck+1; i++) {
-//					if(i >= distanceToCheck && foundAir) {
-//						isPosExposed = true;
-//						break outerloop;
-//					}
-//					BlockState neighbourBlockState = mod.getWorld().getBlockState(pos.offset(direction, i));
-//					if(!mod.getWorld().getBlockState(pos.offset(direction, i)).isOpaque()) {
-//						foundAir = true;
-//					} else {
-//						break;
-//					}
-//	            }
-//			}
-//	    	
-//
-//	        return isPosExposed;
-			
-//			for (int dx = -distanceToCheck; dx <= distanceToCheck; dx++) {
-//	            for (int dy = -distanceToCheck; dy <= distanceToCheck; dy++) {
-//	                for (int dz = -distanceToCheck; dz <= distanceToCheck; dz++) {
-//	                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) <= distanceToCheck
-//	                            && WorldHelper.isAir(mod, new BlockPos(dx, dy, dz))) {
-//	                        return true;
-//	                    }
-//	                }
-//	            }
-//	        }
-//	        return false;
-
-//			return WorldHelper.isAir(mod, pos.up()) || WorldHelper.isAir(mod, pos.down())
-//					|| WorldHelper.isAir(mod, pos.east()) || WorldHelper.isAir(mod, pos.west())
-//					|| WorldHelper.isAir(mod, pos.north()) || WorldHelper.isAir(mod, pos.south());
-//        	return mod.getWorld().getBlockState(pos.up()).getBlock() == Blocks.CAVE_AIR
-//        			|| mod.getWorld().getBlockState(pos.down()).getBlock() == Blocks.CAVE_AIR
-//        			|| mod.getWorld().getBlockState(pos.east()).getBlock() == Blocks.CAVE_AIR
-//        			|| mod.getWorld().getBlockState(pos.west()).getBlock() == Blocks.CAVE_AIR
-//        			|| mod.getWorld().getBlockState(pos.north()).getBlock() == Blocks.CAVE_AIR
-//        			|| mod.getWorld().getBlockState(pos.south()).getBlock() == Blocks.CAVE_AIR;	
 		}
 
 		protected static boolean isDangerousBlock(AltoClef mod, BlockPos pos)
 		{
-//        	if(!isOre(mod.getWorld().getBlockState(pos))) return false;
 			Iterable<Entity> entities = mod.getWorld().getEntities();
 			for (Entity entity : entities)
 			{

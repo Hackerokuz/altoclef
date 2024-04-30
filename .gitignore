@@ -6,6 +6,8 @@ baritone/
 *.iml
 *.ipr
 *.iws
+.project
+q
 
 .project
 # IntelliJ

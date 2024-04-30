@@ -1,6 +1,7 @@
 package adris.altoclef.chains;
 
 import adris.altoclef.AltoClef;
+import adris.altoclef.Debug;
 import adris.altoclef.Settings;
 import adris.altoclef.tasks.resources.CollectFoodTask;
 import adris.altoclef.tasks.speedrun.DragonBreathTracker;
@@ -83,7 +84,12 @@ public class FoodChain extends SingleTaskChain {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;
         }
-        if (mod.getMobDefenseChain().isPuttingOutFire()) {
+        if (mod.getMobDefenseChain().isPuttingOutFire() 
+        		|| mod.getMobDefenseChain().isShielding() 
+        		|| mod.getPlayer().isBlocking()
+        		|| mod.getMobDefenseChain().isDoingAcrobatics()
+        		|| !mod.getEntityTracker().getHostiles().isEmpty() && mod.getPlayer().getHealth() < 4
+        		) {
             stopEat(mod);
             return Float.NEGATIVE_INFINITY;
         }
@@ -143,10 +149,10 @@ public class FoodChain extends SingleTaskChain {
         }
 
         Settings settings = mod.getModSettings();
+       
 
         if (_needsFood || _cachedFoodScore < settings.getMinimumFoodAllowed()) {
             _needsFood = _cachedFoodScore < settings.getFoodUnitsToCollect();
-
             // Only collect if we don't have enough food.
             // If the user inputs invalid settings, the bot would get stuck here.
             if (_cachedFoodScore < settings.getFoodUnitsToCollect()) {
@@ -154,7 +160,6 @@ public class FoodChain extends SingleTaskChain {
                 return 55f;
             }
         }
-
 
         // Food eating is handled asynchronously.
         return Float.NEGATIVE_INFINITY;
@@ -231,7 +236,8 @@ public class FoodChain extends SingleTaskChain {
         for (ItemStack stack : mod.getItemStorage().getItemStacksPlayerInventory(true)) {
             if (stack.isFood()) {
                 // Ignore protected items
-                if (!ItemHelper.canThrowAwayStack(mod, stack)) continue;
+            	// if we ignore protected foods system gets stuck
+            	// if (!ItemHelper.canThrowAwayStack(mod, stack)) continue;
 
                 // Ignore spider eyes
                 if (stack.getItem() == Items.SPIDER_EYE) {
