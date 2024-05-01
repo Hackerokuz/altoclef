@@ -66,7 +66,7 @@ public class SlotHandler {
         clickWindowSlot(slot.getWindowSlot(), mouseButton, type);
     }
 
-    private void clickSlotForce(Slot slot, int mouseButton, SlotActionType type) {
+    public void clickSlotForce(Slot slot, int mouseButton, SlotActionType type) {
         forceAllowNextSlotAction();
         clickSlot(slot, mouseButton, type);
     }
